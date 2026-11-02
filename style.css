@@ -452,3 +452,134 @@ body, html {
     border-color: var(--gold-dark);
     color: white;
 }
+
+/* =====================================================
+   TAMBAHAN: TOMBOL LAYAR PENUH + TAMPILAN HP
+   (semua di bawah ini hanya menambah, kode di atas tidak diubah)
+   ===================================================== */
+
+button, select { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
+.fullscreen-toggle {
+    position: fixed;
+    top: 15px;
+    right: 75px;
+    z-index: 3000;
+    background: rgba(0,0,0,0.6);
+    border: 2px solid var(--gold-dark);
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: 0.2s;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fullscreen-toggle:hover {
+    border-color: var(--gold);
+    transform: scale(1.1);
+}
+
+.fullscreen-toggle svg { width: 24px; height: 24px; }
+.fullscreen-toggle .icon-exit { display: none; }
+.fullscreen-toggle.is-fs .icon-enter { display: none; }
+.fullscreen-toggle.is-fs .icon-exit { display: block; }
+
+/* ---------- HP & layar kecil (umum) ---------- */
+@media (max-width: 900px), (max-height: 500px) {
+    .screen {
+        justify-content: flex-start;
+        padding: 58px 0 16px;
+        box-sizing: border-box;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+    /* trik supaya tetap center kalau muat, dan bisa di-scroll kalau tidak muat */
+    .screen::before { content: ""; margin-top: auto; }
+    .screen::after  { content: ""; margin-bottom: auto; }
+
+    .sound-toggle { top: 10px; right: 10px; width: 42px; height: 42px; font-size: 1.2rem; }
+    .fullscreen-toggle { top: 10px; right: 60px; width: 42px; height: 42px; }
+    .fullscreen-toggle svg { width: 20px; height: 20px; }
+    .btn-pause { top: 10px; left: 10px; padding: 10px 16px; font-size: 0.85rem; }
+
+    .intro-t { font-size: 1.6rem; padding: 0 16px; }
+    #i2 { margin: 12px 0 !important; }
+    #i3 { font-size: 2.1rem !important; }
+
+    .brand-title { font-size: 2.4rem; letter-spacing: 4px; }
+    h1.brand-title, h2.brand-title { font-size: clamp(1.5rem, 8vw, 2.4rem) !important; }
+    #king-name, #chal-name {
+        font-size: 0.95rem !important;
+        letter-spacing: 0.5px !important;
+        overflow-wrap: anywhere;
+    }
+
+    .stone-panel { padding: 20px 16px; width: 92%; border-width: 3px; box-sizing: border-box; }
+    #player-input { height: 150px; font-size: 1.2rem; padding: 12px; }
+    .btn-action { font-size: 1.25rem; padding: 14px 22px; margin-top: 14px; }
+    .game-select { font-size: 1rem; padding: 12px 40px 12px 14px; margin-bottom: 12px; }
+
+    .roulette-box { width: 90% !important; max-width: 600px; }
+
+    #screen-briefing .stone-panel > div:nth-of-type(1) { margin: 18px 0 !important; }
+    #screen-briefing .stone-panel > div:nth-of-type(1) > div { min-width: 0; }
+    #k-brief, #c-brief { font-size: 1.5rem !important; overflow-wrap: anywhere; }
+    #screen-briefing .stone-panel > div:nth-of-type(1) > div:nth-child(2) { font-size: 1.4rem !important; padding: 0 6px; }
+    #screen-briefing .stone-panel > div:nth-of-type(1) > div > div:first-child { font-size: 0.75rem; white-space: nowrap; }
+    #queue-container { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important; }
+
+    #progress-wrap { margin-bottom: 10px; }
+    .arena-grid > * { min-width: 0; }
+
+    .q-card { padding: 16px; border-width: 6px; }
+    #q-text { font-size: 1.35rem; margin-bottom: 14px; }
+    #opt-text { font-size: 1.05rem; }
+    .warrior-card { padding: 12px; border-width: 3px; border-radius: 14px; }
+    #king-score, #chal-score { font-size: 2.2rem !important; }
+    .pad-grid { gap: 8px; margin-top: 12px; }
+    .pad-btn { font-size: 1.6rem; border-width: 3px; border-radius: 12px; }
+
+    #next-up-wrap { margin-top: 14px; }
+    .next-up-chip { padding: 6px 12px; font-size: 0.85rem; }
+
+    #result-overlay { padding: 12px; box-sizing: border-box; }
+    #result-overlay h1 { font-size: 2rem !important; }
+    .roast-text { font-size: 1.15rem; margin-top: 12px; padding: 0 8px; }
+    .medal-box { font-size: 1rem; padding: 12px 14px; width: calc(100% - 16px); box-sizing: border-box; }
+
+    .alert-box { padding: 22px; width: 88%; box-sizing: border-box; }
+    #alert-title { font-size: 1.6rem !important; }
+    #alert-message { font-size: 1.05rem !important; margin: 14px 0 !important; }
+}
+
+/* ---------- HP posisi berdiri: soal di atas, 2 pemain di bawah ---------- */
+@media (max-width: 900px) and (orientation: portrait) {
+    .arena-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .q-card { grid-column: 1 / -1; order: -1; }
+}
+
+/* ---------- HP posisi tidur (landscape): tetap 3 kolom tapi dipadatkan ---------- */
+@media (orientation: landscape) and (max-width: 1000px) {
+    .screen { padding-top: 46px; padding-bottom: 8px; }
+    .arena-grid { grid-template-columns: minmax(110px, 150px) 1fr minmax(110px, 150px); gap: 10px; }
+    .q-card { padding: 10px 14px; border-width: 5px; }
+    #q-text { font-size: 1.2rem; margin-bottom: 8px; }
+    #opt-text { font-size: 0.95rem; line-height: 1.3; }
+    #round-info { font-size: 0.85rem !important; }
+    #timer-bar-outer { margin-bottom: 8px; height: 10px; }
+    .warrior-card { padding: 8px; }
+    #king-score, #chal-score { font-size: 1.7rem !important; }
+    .pad-grid { gap: 6px; margin-top: 8px; }
+    .pad-btn { font-size: 1.3rem; }
+    #progress-wrap { margin-bottom: 6px; }
+    #next-up-wrap { margin-top: 8px; }
+    #next-up-title { margin-bottom: 6px; font-size: 0.8rem; }
+    #result-overlay h1 { font-size: 1.6rem !important; }
+    .roast-text { font-size: 1rem; }
+}
