@@ -698,3 +698,51 @@ document.addEventListener('keydown', (e) => {
         Game.togglePause();
     }
 });
+
+// =====================================================
+// TAMBAHAN: LAYAR PENUH (kode di atas tidak diubah)
+// =====================================================
+const Fullscreen = {
+    isActive() {
+        return !!(document.fullscreenElement || document.webkitFullscreenElement);
+    },
+
+    isSupported() {
+        const el = document.documentElement;
+        return !!(el.requestFullscreen || el.webkitRequestFullscreen);
+    },
+
+    toggle() {
+        // lepas fokus tombol supaya tombol Spasi (jeda) tidak ikut menekan tombol ini
+        if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+
+        if (!this.isSupported()) {
+            showAlert("LAYAR PENUH", "Browser ini tidak mendukung layar penuh. Di iPhone: ketuk tombol Bagikan lalu pilih 'Tambah ke Layar Utama', lalu buka dari ikon itu.");
+            return;
+        }
+
+        try {
+            let p;
+            if (this.isActive()) {
+                const exit = document.exitFullscreen || document.webkitExitFullscreen;
+                p = exit.call(document);
+            } else {
+                const el = document.documentElement;
+                const req = el.requestFullscreen || el.webkitRequestFullscreen;
+                p = req.call(el);
+            }
+            if (p && p.catch) p.catch(() => {});
+        } catch (e) { /* diblokir browser, abaikan */ }
+    },
+
+    sync() {
+        const btn = document.getElementById('btn-fullscreen');
+        if (!btn) return;
+        const on = this.isActive();
+        btn.classList.toggle('is-fs', on);
+        btn.title = on ? 'Keluar Layar Penuh' : 'Layar Penuh';
+    }
+};
+
+document.addEventListener('fullscreenchange', () => Fullscreen.sync());
+document.addEventListener('webkitfullscreenchange', () => Fullscreen.sync());
