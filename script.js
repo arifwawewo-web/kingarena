@@ -97,8 +97,8 @@ const Game = {
         ansLet: null,
         dataLoaded: false,
         usedQuestions: [],
-        timeLimit: 12,
-        timeLeft: 12,
+        timeLimit: 45,
+        timeLeft: 45,
         timerId: null,
         isPaused: false,
         pausedButtons: []
@@ -124,7 +124,7 @@ const Game = {
         fetch(url)
             .then(res => res.text())
             .then(csv => {
-                const rows = csv.trim().split("\n").map(r => r.split(","));
+                const rows = parseCSV(csv);
                 rows.shift(); // Remove header
                 this.db = rows
                     .map(r => ({
@@ -746,3 +746,236 @@ const Fullscreen = {
 
 document.addEventListener('fullscreenchange', () => Fullscreen.sync());
 document.addEventListener('webkitfullscreenchange', () => Fullscreen.sync());
+
+
+// =====================================================
+// TAMBAHAN: KOTAK SOAL OTOMATIS MENYESUAIKAN SOAL PANJANG
+// (huruf soal & pilihan dikecilkan seperlunya sampai muat di layar)
+// =====================================================
+const QFit = {
+    fit() {
+        const screen = document.getElementById('screen-battle');
+        const card = document.querySelector('.q-card');
+        const q = document.getElementById('q-text');
+        const o = document.getElementById('opt-text');
+        const first = document.getElementById('progress-wrap');
+        const last = document.getElementById('next-up-wrap');
+        if (!screen || !card || !q || !o || !first || !last) return;
+        if (screen.classList.contains('hidden')) return;
+
+        // kembalikan ke ukuran standar dulu
+        q.style.fontSize = ''; o.style.fontSize = ''; card.style.padding = '';
+        const cs = getComputedStyle(screen);
+        const available = screen.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+        const needed = () => last.getBoundingClientRect().bottom - first.getBoundingClientRect().top;
+        if (needed() <= available) return;
+
+        const baseQ = parseFloat(getComputedStyle(q).fontSize);
+        const baseO = parseFloat(getComputedStyle(o).fontSize);
+        const basePad = parseFloat(getComputedStyle(card).paddingTop);
+        const minQ = Math.min(baseQ, 12), minO = Math.min(baseO, 11), minPad = Math.min(basePad, 8);
+
+        for (let s = 0.95; s >= 0.2; s -= 0.05) {
+            q.style.fontSize = Math.max(minQ, baseQ * s) + 'px';
+            o.style.fontSize = Math.max(minO, baseO * s) + 'px';
+            card.style.padding = Math.max(minPad, basePad * s) + 'px';
+            if (needed() <= available) break;
+        }
+    }
+};
+
+(function () {
+    const originalLoadMatch = Game.loadMatch;
+    Game.loadMatch = function () {
+        const result = originalLoadMatch.apply(this, arguments);
+        QFit.fit();
+        return result;
+    };
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => QFit.fit(), 150);
+    });
+})();
+
+
+// =====================================================
+// TAMBAHAN: TOMBOL KEMBALI DI SETIAP HALAMAN
+// intro -> aturan -> materi -> input nama -> (roulette) -> urutan -> arena
+// =====================================================
+const Nav = {
+    // layar -> layar tujuan saat tombol kembali ditekan
+    parents: {
+        'screen-rules': 'screen-intro',
+        'screen-materi': 'screen-rules',
+        'screen-input': 'screen-materi',
+        'screen-briefing': 'screen-input',
+        'screen-battle': 'screen-input'   // lewat konfirmasi dulu
+    },
+    current: 'screen-intro',
+    pausedByExit: false,
+
+    sync(id) {
+        this.current = id;
+        const b = document.getElementById('btn-back');
+        if (!b) return;
+        // roulette (screen-selection) jalan otomatis ±4 detik, jadi tidak ada tombol kembali
+        b.classList.toggle('back-hidden', !this.parents[id]);
+        b.textContent = id === 'screen-battle' ? '← KELUAR' : '← KEMBALI';
+        this.place();
+    },
+
+    // di arena, tombol diletakkan di sebelah tombol JEDA supaya tidak bertumpuk
+    place() {
+        const b = document.getElementById('btn-back');
+        const p = document.getElementById('btn-pause');
+        if (!b) return;
+        if (this.current === 'screen-battle' && p) {
+            const r = p.getBoundingClientRect();
+            if (r.width > 0) {
+                b.style.left = (r.right + 10) + 'px';
+                b.style.top = r.top + 'px';
+                return;
+            }
+        }
+        b.style.left = '';
+        b.style.top = '';
+    },
+
+    back() {
+        if (this.current === 'screen-battle') { this.askExit(); return; }
+        const target = this.parents[this.current];
+        if (!target) return;
+        if (this.current === 'screen-briefing') this.resetMatch();
+        Game.switchScreen(target);
+    },
+
+    askExit() {
+        // hentikan waktu selama pertanyaan konfirmasi muncul
+        const running = !!Game.state.timerId && !Game.state.isPaused;
+        if (running) {
+            Game.pauseTimer();
+            this.pausedByExit = Game.state.isPaused;
+        } else {
+            this.pausedByExit = false;
+        }
+        document.getElementById('exit-overlay').classList.add('show');
+    },
+
+    stay() {
+        document.getElementById('exit-overlay').classList.remove('show');
+        if (this.pausedByExit) {
+            this.pausedByExit = false;
+            Game.resumeTimer();
+        }
+    },
+
+    leave() {
+        document.getElementById('exit-overlay').classList.remove('show');
+        this.pausedByExit = false;
+        this.resetMatch();
+        Game.switchScreen('screen-input');
+    },
+
+    // bersihkan sisa pertandingan supaya mulai lagi dari nol (nama di kotak input tetap ada)
+    resetMatch() {
+        Game.clearTimer();
+        const s = Game.state;
+        s.isPaused = false;
+        s.isLock = false;
+        s.pausedButtons = [];
+        s.answered = { king: false, chal: false };
+        s.currentRound = 1;
+        s.duelCount = 0;
+        s.king = null;
+        s.queue = [];
+        s.scores = {};
+        s.usedQuestions = [];
+
+        const po = document.getElementById('pause-overlay');
+        if (po) po.classList.add('hidden');
+        const pb = document.getElementById('btn-pause');
+        if (pb) pb.innerText = '⏸ JEDA';
+        const ro = document.getElementById('result-overlay');
+        if (ro) ro.classList.add('hidden');
+        document.querySelectorAll('.pad-btn').forEach(b => {
+            b.classList.remove('wrong', 'correct');
+            b.disabled = false;
+        });
+    }
+};
+
+(function () {
+    const originalSwitchScreen = Game.switchScreen;
+    Game.switchScreen = function (id) {
+        const result = originalSwitchScreen.apply(this, arguments);
+        Nav.sync(id);
+        return result;
+    };
+
+    const pauseBtn = document.getElementById('btn-pause');
+    if (pauseBtn && window.ResizeObserver) {
+        new ResizeObserver(() => Nav.place()).observe(pauseBtn);
+    }
+    window.addEventListener('resize', () => Nav.place());
+
+    // saat konfirmasi keluar tampil, tombol Spasi tidak boleh ikut melanjutkan pertandingan
+    document.addEventListener('keydown', (e) => {
+        const ov = document.getElementById('exit-overlay');
+        if (e.code === 'Space' && ov && ov.classList.contains('show')) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+        }
+    }, true);
+})();
+
+
+// =====================================================
+// PERBAIKAN: PEMBACA CSV YANG BENAR
+// Sebelumnya baris dipecah dengan split(","), sehingga koma di dalam soal
+// merusak kolom. Pembaca ini mengenali sel yang dibungkus tanda kutip
+// ("Soal, dengan koma"), tanda kutip ganda ("") di dalam sel, dan baris baru
+// di dalam sel.
+// =====================================================
+function parseCSV(text) {
+    const rows = [];
+    let row = [];
+    let field = "";
+    let inQuotes = false;
+
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // buang BOM kalau ada
+
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+
+        if (inQuotes) {
+            if (ch === '"') {
+                if (text[i + 1] === '"') { field += '"'; i++; }  // "" -> "
+                else inQuotes = false;                            // kutip penutup
+            } else {
+                field += ch;
+            }
+        } else if (ch === '"') {
+            inQuotes = true;
+        } else if (ch === ',') {
+            row.push(field);
+            field = "";
+        } else if (ch === '\n' || ch === '\r') {
+            if (ch === '\r' && text[i + 1] === '\n') i++;         // CRLF dihitung satu baris
+            row.push(field);
+            field = "";
+            if (row.some(c => c.trim() !== "")) rows.push(row);   // lewati baris kosong
+            row = [];
+        } else {
+            field += ch;
+        }
+    }
+
+    // baris terakhir kalau file tidak diakhiri baris baru
+    if (field !== "" || row.length > 0) {
+        row.push(field);
+        if (row.some(c => c.trim() !== "")) rows.push(row);
+    }
+    return rows;
+}
