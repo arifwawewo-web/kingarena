@@ -20,11 +20,31 @@
         <svg class="icon-exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>
     </button>
 
+    <button id="btn-back" class="back-btn back-hidden" onclick="Nav.back()">← KEMBALI</button>
+
     <main id="screen-intro" class="screen">
         <div id="i1" style="opacity:0; transition: 1.5s;" class="intro-t">Hanya yang terpilih...</div>
         <div id="i2" style="opacity:0; transition: 1.5s; margin: 20px 0;" class="intro-t">Hanya yang berani...</div>
         <div id="i3" style="opacity:0; transition: 1.5s; color:var(--gold); font-size: 3.5rem;" class="intro-t">DEWA MENANTI DI ARENA.</div>
-        <button id="gb" style="opacity:0; transition: 1s;" class="btn-action" onclick="Game.switchScreen('screen-materi')">BUKA GERBANG 🏛️</button>
+        <button id="gb" style="opacity:0; transition: 1s;" class="btn-action" onclick="Game.switchScreen('screen-rules')">BUKA GERBANG 🏛️</button>
+    </main>
+
+    <main id="screen-rules" class="screen hidden">
+        <div class="decree">
+            <div class="decree-seal">📯</div>
+            <div class="decree-kicker">PENGUMUMAN ARENA</div>
+            <h1 class="decree-title">ATURAN BERMAIN</h1>
+            <div class="decree-orn">⚜ ✦ ⚜</div>
+            <p class="decree-lead">Dengarkanlah, wahai para Gladiator!</p>
+            <ol class="decree-list">
+                <li><span class="decree-num">I</span><div><b>Satu Raja, banyak penantang.</b> Satu gladiator duduk di singgasana sebagai RAJA. Gladiator lain menantangnya satu per satu sesuai antrean.</div></li>
+                <li><span class="decree-num">II</span><div><b>Beradu menjawab.</b> Raja dan Penantang menjawab soal yang sama. Yang menjawab BENAR lebih dulu memenangkan duel dan mendapat 10 poin.</div></li>
+                <li><span class="decree-num">III</span><div><b>Raja menang, Raja bertahan.</b> Jika Penantang yang menang, ia merebut tahta dan menjadi RAJA yang baru.</div></li>
+                <li><span class="decree-num">IV</span><div><b>Salah menjawab? Mundur!</b> Gladiator yang kalah atau salah menjawab mundur ke antrean paling belakang.</div></li>
+            </ol>
+            <div class="decree-foot">Di akhir pertarungan, gladiator dengan poin terbanyak dinobatkan menjadi <b>KAISAR ARENA 👑</b></div>
+            <button class="btn-action decree-btn" onclick="Game.switchScreen('screen-materi')">KAMI MENGERTI ⚔️</button>
+        </div>
     </main>
 
     <main id="screen-materi" class="screen hidden">
@@ -153,6 +173,17 @@
             <div id="next-up-list"></div>
         </div>
     </main>
+
+    <div id="exit-overlay">
+        <div class="alert-box">
+            <h1 id="exit-title" style="font-family:'Cinzel'; font-size:2.2rem; color:var(--gold);">⚠️ KELUAR DARI ARENA?</h1>
+            <p id="exit-msg" style="font-size:1.25rem; margin:20px 0;">Pertandingan yang sedang berjalan akan dihentikan dan skor akan diulang dari awal.</p>
+            <div class="exit-actions">
+                <button class="btn-action" onclick="Nav.stay()">LANJUT BERTANDING</button>
+                <button class="btn-action btn-ghost" onclick="Nav.leave()">YA, KELUAR</button>
+            </div>
+        </div>
+    </div>
 
     <div id="result-overlay" class="hidden"></div>
 
