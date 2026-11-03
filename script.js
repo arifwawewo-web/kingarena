@@ -979,3 +979,439 @@ function parseCSV(text) {
     }
     return rows;
 }
+
+
+// =====================================================
+// TAMBAHAN: MUSIK LATAR (Web Audio API, tanpa file eksternal)
+// Kode game di atas tidak diubah, modul ini hanya "menempel" lewat hook.
+// Suasana musik mengikuti layar:
+//   ambient  -> intro, aturan, pilih materi, input nama, urutan perang
+//   roll     -> pengacakan raja (drum roll tegang)
+//   battle   -> arena (drum perang; makin tegang saat waktu <= 6 detik)
+//   victory  -> hasil akhir (fanfare)
+// =====================================================
+const Music = {
+    mood: null,
+    bus: null,
+    master: null,
+    comp: null,
+    step: 0,
+    nextTime: 0,
+    timer: null,
+    started: false,
+    ducked: false,
+    noiseBuf: null,
+    VOL: 0.5,
+
+    mtof(m) { return 440 * Math.pow(2, (m - 69) / 12); },
+
+    // ---------- infrastruktur ----------
+    init() {
+        const ctx = Sound.getCtx();
+        if (this.master) return ctx;
+        this.comp = ctx.createDynamicsCompressor();
+        this.master = ctx.createGain();
+        this.master.gain.value = Sound.enabled ? this.VOL : 0;
+        this.master.connect(this.comp);
+        this.comp.connect(ctx.destination);
+
+        const len = ctx.sampleRate;
+        this.noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const d = this.noiseBuf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+        return ctx;
+    },
+
+    start() {
+        if (this.started) return;
+        try {
+            const ctx = this.init();
+            if (ctx.state === 'suspended') ctx.resume();
+            this.started = true;
+            const id = (typeof Nav !== 'undefined' && Nav.current) ? Nav.current : 'screen-intro';
+            this.setMood(this.moodForScreen(id), 1.5);
+            this.timer = setInterval(() => this.schedule(), 50);
+        } catch (e) { /* audio diblokir browser, abaikan */ }
+    },
+
+    moodForScreen(id) {
+        if (id === 'screen-battle') return 'battle';
+        if (id === 'screen-selection') return 'roll';
+        return 'ambient';
+    },
+
+    setMood(name, fadeIn = 0.6) {
+        if (name === this.mood) return;
+        this.mood = name;
+        if (!this.started) return;
+        const ctx = Sound.getCtx();
+        const t = ctx.currentTime;
+
+        if (this.bus) {
+            const old = this.bus;
+            old.gain.cancelScheduledValues(t);
+            old.gain.setValueAtTime(old.gain.value, t);
+            old.gain.linearRampToValueAtTime(0, t + 0.6);
+            setTimeout(() => { try { old.disconnect(); } catch (e) {} }, 1200);
+        }
+        this.bus = ctx.createGain();
+        this.bus.gain.setValueAtTime(0, t);
+        this.bus.gain.linearRampToValueAtTime(1, t + fadeIn);
+        this.bus.connect(this.master);
+
+        this.step = 0;
+        this.nextTime = t + 0.1;
+    },
+
+    setMuted(muted) {
+        if (!this.master) return;
+        const ctx = Sound.getCtx();
+        const t = ctx.currentTime;
+        this.master.gain.cancelScheduledValues(t);
+        this.master.gain.setValueAtTime(this.master.gain.value, t);
+        this.master.gain.linearRampToValueAtTime(muted ? 0 : (this.ducked ? this.VOL * 0.3 : this.VOL), t + 0.15);
+    },
+
+    duck(on) {
+        this.ducked = !!on;
+        if (!this.master || !Sound.enabled) return;
+        const ctx = Sound.getCtx();
+        const t = ctx.currentTime;
+        this.master.gain.cancelScheduledValues(t);
+        this.master.gain.setValueAtTime(this.master.gain.value, t);
+        this.master.gain.linearRampToValueAtTime(on ? this.VOL * 0.3 : this.VOL, t + 0.3);
+    },
+
+    // ---------- penjadwal (lookahead) ----------
+    tension() {
+        const s = Game.state;
+        return this.mood === 'battle' && !!s.timerId && !s.isPaused && !s.isLock && s.timeLeft <= 6;
+    },
+
+    bpm() {
+        switch (this.mood) {
+            case 'ambient': return 66;
+            case 'roll':    return 144;
+            case 'battle':  return this.tension() ? 156 : 132;
+            case 'victory': return 124;
+        }
+        return 100;
+    },
+
+    schedule() {
+        if (!this.started || !this.bus || !this.mood) return;
+        const ctx = Sound.getCtx();
+        if (ctx.state !== 'running') return;
+        while (this.nextTime < ctx.currentTime + 0.2) {
+            const dur = 60 / this.bpm() / 4; // satu langkah = 1/16 not
+            try { this.playStep(this.mood, this.step, this.nextTime, dur); } catch (e) {}
+            this.nextTime += dur;
+            this.step++;
+        }
+    },
+
+    // ---------- instrumen ----------
+    kick(t, vol = 0.5) {
+        const ctx = Sound.getCtx();
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(130, t);
+        o.frequency.exponentialRampToValueAtTime(42, t + 0.14);
+        g.gain.setValueAtTime(vol, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+        o.connect(g); g.connect(this.bus);
+        o.start(t); o.stop(t + 0.32);
+    },
+
+    taiko(t, vol = 0.5, pitch = 85) {
+        const ctx = Sound.getCtx();
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle';
+        o.frequency.setValueAtTime(pitch * 1.8, t);
+        o.frequency.exponentialRampToValueAtTime(pitch, t + 0.12);
+        g.gain.setValueAtTime(vol, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+        o.connect(g); g.connect(this.bus);
+        o.start(t); o.stop(t + 0.6);
+        this.noise(t, 0.07, 400, 'lowpass', vol * 0.5);
+    },
+
+    noise(t, dur, freq, type = 'highpass', vol = 0.15) {
+        const ctx = Sound.getCtx();
+        const src = ctx.createBufferSource();
+        src.buffer = this.noiseBuf;
+        const f = ctx.createBiquadFilter();
+        f.type = type; f.frequency.value = freq;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(vol, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        src.connect(f); f.connect(g); g.connect(this.bus);
+        src.start(t); src.stop(t + dur + 0.02);
+    },
+
+    snare(t, vol = 0.22) { this.noise(t, 0.16, 1500, 'bandpass', vol); },
+    hat(t, vol = 0.07)   { this.noise(t, 0.04, 7000, 'highpass', vol); },
+
+    // nada dengan filter (bass / brass)
+    voice(t, midi, dur, type, cutoff, vol, attack = 0.01) {
+        const ctx = Sound.getCtx();
+        const o = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+        o.type = type;
+        o.frequency.value = this.mtof(midi);
+        f.type = 'lowpass';
+        f.frequency.setValueAtTime(cutoff, t);
+        f.frequency.exponentialRampToValueAtTime(Math.max(200, cutoff * 0.4), t + dur);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(vol, t + attack);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        o.connect(f); f.connect(g); g.connect(this.bus);
+        o.start(t); o.stop(t + dur + 0.05);
+    },
+
+    // pad lembut dengan atak dan release panjang
+    pad(t, notes, dur, vol = 0.05) {
+        const ctx = Sound.getCtx();
+        notes.forEach(m => {
+            [-6, 6].forEach(det => {
+                const o = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+                o.type = 'sawtooth';
+                o.frequency.value = this.mtof(m);
+                o.detune.value = det;
+                f.type = 'lowpass'; f.frequency.value = 900;
+                g.gain.setValueAtTime(0.0001, t);
+                g.gain.linearRampToValueAtTime(vol, t + dur * 0.35);
+                g.gain.linearRampToValueAtTime(0.0001, t + dur + 1.2);
+                o.connect(f); f.connect(g); g.connect(this.bus);
+                o.start(t); o.stop(t + dur + 1.3);
+            });
+        });
+    },
+
+    bell(t, midi, vol = 0.07) {
+        const ctx = Sound.getCtx();
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.value = this.mtof(midi);
+        g.gain.setValueAtTime(vol, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 1.6);
+        o.connect(g); g.connect(this.bus);
+        o.start(t); o.stop(t + 1.7);
+    },
+
+    // riser: desis noise yang naik makin tinggi dan keras
+    riser(t, dur, vol = 0.14) {
+        const ctx = Sound.getCtx();
+        const src = ctx.createBufferSource();
+        src.buffer = this.noiseBuf; src.loop = true;
+        const f = ctx.createBiquadFilter();
+        f.type = 'bandpass'; f.Q.value = 3;
+        f.frequency.setValueAtTime(300, t);
+        f.frequency.exponentialRampToValueAtTime(6000, t + dur);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(vol, t + dur * 0.95);
+        g.gain.linearRampToValueAtTime(0.0001, t + dur + 0.05);
+        src.connect(f); f.connect(g); g.connect(this.bus);
+        src.start(t); src.stop(t + dur + 0.1);
+    },
+
+    // tremolo senar tinggi yang menggigit (dua nada berjarak tritone/semitone)
+    tremolo(t, midi, dur, vol = 0.035) {
+        const ctx = Sound.getCtx();
+        const o = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+        const lfo = ctx.createOscillator(), lg = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = this.mtof(midi);
+        f.type = 'lowpass'; f.frequency.value = 2400;
+        g.gain.setValueAtTime(vol, t);
+        lfo.frequency.value = 14; lg.gain.value = vol * 0.9;
+        lfo.connect(lg); lg.connect(g.gain);
+        g.gain.setValueAtTime(vol, t);
+        g.gain.linearRampToValueAtTime(0.0001, t + dur);
+        o.connect(f); f.connect(g); g.connect(this.bus);
+        o.start(t); lfo.start(t); o.stop(t + dur + 0.05); lfo.stop(t + dur + 0.05);
+    },
+
+    // ---------- partitur ----------
+    playStep(mood, n, t, dur) {
+        const b = n % 16;           // langkah dalam satu bar
+        const bar = Math.floor(n / 16);
+
+        if (mood === 'ambient') {
+            // Dm | Eb (Phrygian, mencekam) | Dm | A  (tiap akord 2 bar)
+            const chords = [[50, 57, 62], [51, 58, 63], [50, 57, 62], [45, 57, 61]];
+            const idx = Math.floor(bar / 2) % 4;
+            const ch = chords[idx];
+            if (n % 32 === 0) this.pad(t, ch, dur * 32, 0.05);
+            if (n % 32 === 0) this.voice(t, ch[0] - 24, dur * 31, 'sawtooth', 220, 0.12, 0.6); // gemuruh rendah
+            // detak jantung perang
+            if (b === 0) this.taiko(t, 0.38, 62);
+            if (b === 3) this.taiko(t, 0.24, 62);
+            if (b === 8) this.taiko(t, 0.3, 70);
+            if (b === 14 && bar % 2 === 1) this.taiko(t, 0.2, 80);
+            if (bar % 4 === 3 && b === 0) this.riser(t, dur * 16, 0.07);
+            // dentingan dingin pada nada Phrygian
+            if ((b === 6 || b === 12) && Math.random() < 0.5) {
+                const sc = [74, 75, 77, 79, 81, 82];
+                this.bell(t, sc[Math.floor(Math.random() * sc.length)], 0.06);
+            }
+            return;
+        }
+
+        if (mood === 'roll') {
+            // drum roll tegang yang terus menanjak
+            const climb = Math.min(1, n / 96);
+            if (b % 4 === 0) this.kick(t, 0.5);
+            this.taiko(t, 0.14 + climb * 0.2, 90 + (b % 4) * 6);
+            this.hat(t, 0.05 + climb * 0.04);
+            if (b % 4 === 2) this.snare(t, 0.12 + climb * 0.12);
+            if (b % 2 === 0) this.voice(t, 38 + (b % 8 === 4 ? 1 : 0), dur * 2, 'sawtooth', 600, 0.14);
+            if (n % 32 === 0) {
+                this.pad(t, [50, 56, 62], dur * 32, 0.045);
+                this.riser(t, dur * 32, 0.12);
+            }
+            return;
+        }
+
+        if (mood === 'battle') {
+            const tense = this.tension();
+            // Phrygian D: D Eb F G A Bb C  -> akar bergerak D D Eb A
+            const roots = [38, 38, 39, 33];
+            const root = roots[bar % 4];
+
+            // --- drum perang, lebih padat ---
+            if (b === 0 || b === 8 || b === 10) this.kick(t, 0.6);
+            if (tense && (b === 3 || b === 6 || b === 12 || b === 14)) this.kick(t, 0.42);
+            if (b === 0) this.taiko(t, 0.5, 66);
+            if (b === 6 || b === 11) this.taiko(t, 0.34, 88);
+            if (b === 4 || b === 12) { this.snare(t, 0.26); this.taiko(t, 0.18, 110); }
+            // fill drum tiap 2 bar, penuh di bar ke-4
+            if (bar % 2 === 1 && b >= 12) this.taiko(t, 0.3, 75 + (b - 12) * 9);
+            if (bar % 4 === 3 && b >= 8 && b % 2 === 0) this.taiko(t, 0.3, 70 + (b - 8) * 6);
+            // hi-hat 16 penuh
+            this.hat(t, b % 2 === 0 ? 0.07 : 0.045);
+
+            // --- bass 'berlari' 16th (ostinato) ---
+            const gallop = [1,0,1,1, 1,0,1,0, 1,0,1,1, 1,1,0,1];
+            if (gallop[b]) {
+                const accent = (b % 4 === 0);
+                this.voice(t, root + 12 + (b === 7 || b === 15 ? 1 : 0), dur * 1.4, 'sawtooth', accent ? 1100 : 650, accent ? 0.13 : 0.09);
+            }
+            if (b % 8 === 0) this.voice(t, root, dur * 7, 'sine', 250, 0.26, 0.02);
+
+            // --- klakson perang rendah tiap 4 bar ---
+            if (bar % 4 === 0 && b === 0) {
+                this.voice(t, root + 24, dur * 14, 'sawtooth', 900, 0.07, 0.25);
+                this.voice(t, root + 31, dur * 14, 'sawtooth', 900, 0.05, 0.25);
+            }
+
+            // --- riff brass staccato, cepat & mencekam ---
+            const riff = [
+                { 0: 74, 2: 75, 4: 74, 6: 69, 8: 74, 10: 75, 12: 77, 14: 75 },
+                { 0: 74, 2: 75, 4: 74, 6: 69, 8: 70, 10: 69, 12: 67, 14: 69 },
+                { 0: 75, 2: 77, 4: 75, 6: 70, 8: 75, 10: 77, 12: 79, 14: 77 },
+                { 0: 69, 1: 70, 2: 69, 4: 68, 6: 69, 8: 73, 10: 74, 12: 75, 13: 74, 14: 73 }
+            ][bar % 4];
+            if (riff[b]) this.voice(t, riff[b] + (tense ? 12 * (b % 4 === 0 ? 0 : 0) : 0), dur * 1.6, 'sawtooth', 2600, 0.085, 0.005);
+            // lapisan oktaf bawah biar tebal
+            if (riff[b] && b % 4 === 0) this.voice(t, riff[b] - 12, dur * 3, 'square', 1200, 0.045, 0.01);
+
+            // --- tremolo senar tinggi bernada mencekam (tritone) ---
+            if (b === 0) {
+                this.tremolo(t, root + 36, dur * 16, 0.03);
+                this.tremolo(t, root + 42, dur * 16, 0.022);
+            }
+
+            // --- riser menjelang bar pertama frasa berikutnya ---
+            if (bar % 4 === 3 && b === 0) this.riser(t, dur * 16, tense ? 0.2 : 0.14);
+
+            // --- saat waktu hampir habis: sirene dan stab nada tinggi ---
+            if (tense) {
+                if (b % 4 === 2) this.voice(t, root + 36, dur * 1.2, 'square', 3200, 0.05);
+                if (b === 0 || b === 8) this.voice(t, root + 42, dur * 4, 'sawtooth', 3000, 0.045, 0.01);
+                if (b % 2 === 1) this.noise(t, 0.03, 9000, 'highpass', 0.05);
+            }
+            return;
+        }
+
+        if (mood === 'victory') {
+            // C | G | Am | F  (cocok dengan jingle kemenangan di C mayor)
+            const chords = [[60, 64, 67], [55, 59, 62], [57, 60, 64], [53, 57, 60]];
+            const roots = [48, 43, 45, 41];
+            const ch = chords[bar % 4], root = roots[bar % 4];
+
+            if (b % 4 === 0) this.kick(t, 0.45);
+            if (b === 4 || b === 12) this.snare(t, 0.2);
+            if (b % 2 === 0) this.hat(t, 0.05);
+            if (b % 2 === 0) this.voice(t, root, dur * 1.8, 'sawtooth', 800, 0.1);
+            if (b === 0) this.pad(t, ch, dur * 16, 0.04);
+
+            // arpeggio riang
+            const arp = [ch[0], ch[1], ch[2], ch[1] + 12];
+            if (b % 2 === 0) this.voice(t, arp[(b / 2) % 4] + 12, dur * 2, 'triangle', 3000, 0.1);
+
+            // fanfare di nada tinggi
+            if (b === 0) this.voice(t, ch[2] + 12, dur * 6, 'sawtooth', 2600, 0.07, 0.02);
+            if (b === 8) this.voice(t, ch[1] + 12, dur * 4, 'sawtooth', 2600, 0.06, 0.02);
+            if (b === 12) this.voice(t, ch[2] + 12, dur * 4, 'sawtooth', 2600, 0.06, 0.02);
+            return;
+        }
+    }
+};
+
+(function () {
+    // 1) Browser baru mengizinkan suara setelah interaksi pertama
+    const unlock = () => {
+        Music.start();
+        const ctx = Sound.ctx;
+        if (ctx && ctx.state === 'suspended') ctx.resume();
+    };
+    ['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
+        document.addEventListener(ev, unlock, { passive: true })
+    );
+
+    // 2) Suasana musik mengikuti layar
+    const prevSwitch = Game.switchScreen;
+    Game.switchScreen = function (id) {
+        const r = prevSwitch.apply(this, arguments);
+        Music.setMood(Music.moodForScreen(id));
+        return r;
+    };
+    Music.mood = Music.moodForScreen('screen-intro');
+
+    // 3) Hasil akhir -> fanfare
+    const prevEnd = Game.endGame;
+    Game.endGame = function () {
+        const r = prevEnd.apply(this, arguments);
+        Music.setMood('victory', 1.2);
+        return r;
+    };
+
+    // 4) Jeda -> volume musik mengecil
+    const prevPause = Game.pauseTimer;
+    Game.pauseTimer = function () {
+        const r = prevPause.apply(this, arguments);
+        Music.duck(Game.state.isPaused);
+        return r;
+    };
+    const prevResume = Game.resumeTimer;
+    Game.resumeTimer = function () {
+        const r = prevResume.apply(this, arguments);
+        Music.duck(Game.state.isPaused);
+        return r;
+    };
+
+    // 5) Tombol suara juga mematikan musik
+    const prevToggle = Sound.toggle;
+    Sound.toggle = function () {
+        prevToggle.apply(this, arguments);
+        Music.setMuted(!Sound.enabled);
+    };
+
+    // 6) Tab disembunyikan -> musik berhenti sementara
+    document.addEventListener('visibilitychange', () => {
+        const ctx = Sound.ctx;
+        if (!ctx || !Music.started) return;
+        if (document.hidden) ctx.suspend();
+        else ctx.resume();
+    });
+})();
