@@ -1,200 +1,200 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#0a0a12">
-    <title>Colosseum Quiz - Gladiator Arena</title>
-    <base target="_top">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+    <!DOCTYPE html>
+    <html lang="id">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="theme-color" content="#0a0a12">
+        <title>Colosseum Quiz - Gladiator Arena</title>
+        <base target="_top">
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
 
-    <button id="btn-sound" class="sound-toggle" onclick="Sound.toggle()" title="Suara On/Off">🔊</button>
+        <button id="btn-sound" class="sound-toggle" onclick="Sound.toggle()" title="Suara On/Off">🔊</button>
 
-    <button id="btn-fullscreen" class="fullscreen-toggle" onclick="Fullscreen.toggle()" title="Layar Penuh" aria-label="Layar Penuh">
-        <svg class="icon-enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
-        <svg class="icon-exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>
-    </button>
+        <button id="btn-fullscreen" class="fullscreen-toggle" onclick="Fullscreen.toggle()" title="Layar Penuh" aria-label="Layar Penuh">
+            <svg class="icon-enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+            <svg class="icon-exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>
+        </button>
 
-    <button id="btn-back" class="back-btn back-hidden" onclick="Nav.back()">← KEMBALI</button>
+        <button id="btn-back" class="back-btn back-hidden" onclick="Nav.back()">← KEMBALI</button>
 
-    <main id="screen-intro" class="screen">
-        <div id="i1" style="opacity:0; transition: 1.5s;" class="intro-t">Hanya yang terpilih...</div>
-        <div id="i2" style="opacity:0; transition: 1.5s; margin: 20px 0;" class="intro-t">Hanya yang berani...</div>
-        <div id="i3" style="opacity:0; transition: 1.5s; color:var(--gold); font-size: 3.5rem;" class="intro-t">DEWA MENANTI DI ARENA.</div>
-        <button id="gb" style="opacity:0; transition: 1s;" class="btn-action" onclick="Game.switchScreen('screen-rules')">BUKA GERBANG 🏛️</button>
-    </main>
+        <main id="screen-intro" class="screen">
+            <div id="i1" style="opacity:0; transition: 1.5s;" class="intro-t">Hanya yang terpilih...</div>
+            <div id="i2" style="opacity:0; transition: 1.5s; margin: 20px 0;" class="intro-t">Hanya yang berani...</div>
+            <div id="i3" style="opacity:0; transition: 1.5s; color:var(--gold); font-size: 3.5rem;" class="intro-t">DEWA MENANTI DI ARENA.</div>
+            <button id="gb" style="opacity:0; transition: 1s;" class="btn-action" onclick="Game.switchScreen('screen-rules')">BUKA GERBANG 🏛️</button>
+        </main>
 
-    <main id="screen-rules" class="screen hidden">
-        <div class="decree">
-            <div class="decree-seal">📯</div>
-            <div class="decree-kicker">PENGUMUMAN ARENA</div>
-            <h1 class="decree-title">ATURAN BERMAIN</h1>
-            <div class="decree-orn">⚜ ✦ ⚜</div>
-            <p class="decree-lead">Dengarkanlah, wahai para Gladiator!</p>
-            <ol class="decree-list">
-                <li><span class="decree-num">I</span><div><b>Satu Raja, banyak penantang.</b> Satu gladiator duduk di singgasana sebagai RAJA. Gladiator lain menantangnya satu per satu sesuai antrean.</div></li>
-                <li><span class="decree-num">II</span><div><b>Beradu menjawab.</b> Raja dan Penantang menjawab soal yang sama. Yang menjawab BENAR lebih dulu memenangkan duel dan mendapat 10 poin.</div></li>
-                <li><span class="decree-num">III</span><div><b>Raja menang, Raja bertahan.</b> Jika Penantang yang menang, ia merebut tahta dan menjadi RAJA yang baru.</div></li>
-                <li><span class="decree-num">IV</span><div><b>Salah menjawab? Mundur!</b> Gladiator yang kalah atau salah menjawab mundur ke antrean paling belakang.</div></li>
-            </ol>
-            <div class="decree-foot">Di akhir pertarungan, gladiator dengan poin terbanyak dinobatkan menjadi <b>KAISAR ARENA 👑</b></div>
-            <button class="btn-action decree-btn" onclick="Game.switchScreen('screen-materi')">KAMI MENGERTI ⚔️</button>
-        </div>
-    </main>
-
-    <main id="screen-materi" class="screen hidden">
-        <h1 class="brand-title title-glow" style="font-size:3rem;">PILIH ARENAMU</h1>
-        <div class="stone-panel" style="max-width:600px; text-align:center;">
-            <div class="select-box">
-                <select id="materi-select" class="game-select">
-                    <option value="">⚔️ Pilih Materi</option>
-                    <option value="Aqidah">🕌 Aqidah</option>
-                    <option value="Akhlaq">✨ Akhlaq</option>
-                    <option value="Quran">📖 Al-Qur'an</option>
-                    <option value="Fiqih">⚖️ Fiqih</option>
-                    <option value="Tarikh">🏛️ Tarikh</option>
-                </select>
+        <main id="screen-rules" class="screen hidden">
+            <div class="decree">
+                <div class="decree-seal">📯</div>
+                <div class="decree-kicker">PENGUMUMAN ARENA</div>
+                <h1 class="decree-title">ATURAN BERMAIN</h1>
+                <div class="decree-orn">⚜ ✦ ⚜</div>
+                <p class="decree-lead">Dengarkanlah, wahai para Gladiator!</p>
+                <ol class="decree-list">
+                    <li><span class="decree-num">I</span><div><b>Satu Raja, banyak penantang.</b> Satu gladiator duduk di singgasana sebagai RAJA. Gladiator lain menantangnya satu per satu sesuai antrean.</div></li>
+                    <li><span class="decree-num">II</span><div><b>Beradu menjawab.</b> Raja dan Penantang menjawab soal yang sama. Yang menjawab BENAR lebih dulu memenangkan duel dan mendapat 10 poin.</div></li>
+                    <li><span class="decree-num">III</span><div><b>Raja menang, Raja bertahan.</b> Jika Penantang yang menang, ia merebut tahta dan menjadi RAJA yang baru.</div></li>
+                    <li><span class="decree-num">IV</span><div><b>Salah menjawab? Mundur!</b> Gladiator yang kalah atau salah menjawab mundur ke antrean paling belakang.</div></li>
+                </ol>
+                <div class="decree-foot">Di akhir pertarungan, gladiator dengan poin terbanyak dinobatkan menjadi <b>KAISAR ARENA 👑</b></div>
+                <button class="btn-action decree-btn" onclick="Game.switchScreen('screen-materi')">KAMI MENGERTI ⚔️</button>
             </div>
+        </main>
 
-            <div class="select-box">
-                <select id="kelas-select" class="game-select">
-                    <option value="">🎓 Pilih Kelas</option>
-                    <option value="1">Kelas 1</option>
-                    <option value="2">Kelas 2</option>
-                    <option value="3">Kelas 3</option>
-                    <option value="4">Kelas 4</option>
-                    <option value="5">Kelas 5</option>
-                    <option value="6">Kelas 6</option>
-                </select>
-            </div>
-
-            <div class="select-box">
-                <select id="semester-select" class="game-select">
-                    <option value="">📅 Pilih Semester</option>
-                    <option value="1">Semester 1</option>
-                    <option value="2">Semester 2</option>
-                </select>
-            </div>
-            <div class="select-box">
-                <select id="ronde-select" class="game-select">
-                    <option value="3" selected>🔁 3 Ronde (Normal)</option>
-                    <option value="5">🔁 5 Ronde (Panjang)</option>
-                    <option value="7">🔁 7 Ronde (Sangat Panjang)</option>
-                </select>
-            </div>
-            <button id="btn-lanjut" class="btn-action" onclick="pilihFilter()" disabled>⏳ MEMUAT SOAL...</button>
-        </div>
-    </main>
-
-    <main id="screen-input" class="screen hidden">
-        <h1 class="brand-title">COLOSSEUM</h1>
-        <div class="stone-panel">
-            <textarea id="player-input" placeholder="Masukkan Nama Gladiator (pisahkan dengan koma atau enter)..."></textarea>
-            <button onclick="Game.startSelection()" class="btn-action">ACAK TAKDIR RAJA ⚔️</button>
-        </div>
-    </main>
-
-    <main id="screen-selection" class="screen hidden">
-        <h2 class="brand-title" style="font-size: 3rem;">MEMILIH RAJA...</h2>
-        <div class="roulette-box" style="height:150px; overflow:hidden; border-top:5px solid var(--gold); border-bottom:5px solid var(--gold); width:600px; position:relative;">
-            <div id="roulette-strip" style="position:absolute; width:100%; top:0; transition: top 4s cubic-bezier(0.1, 0, 0.1, 1);"></div>
-        </div>
-    </main>
-
-    <main id="screen-briefing" class="screen hidden">
-        <div class="stone-panel" style="text-align:center;">
-            <h2 class="brand-title" style="font-size: 2.5rem;">URUTAN PERANG</h2>
-            <div style="display:flex; justify-content:space-around; align-items:center; margin:30px 0;">
-                <div>
-                    <div style="color:var(--gold);">RAJA</div>
-                    <div id="k-brief" style="font-size:3.5rem; font-family:'Cinzel';"></div>
+        <main id="screen-materi" class="screen hidden">
+            <h1 class="brand-title title-glow" style="font-size:3rem;">PILIH ARENAMU</h1>
+            <div class="stone-panel" style="max-width:600px; text-align:center;">
+                <div class="select-box">
+                    <select id="materi-select" class="game-select">
+                        <option value="">⚔️ Pilih Materi</option>
+                        <option value="Aqidah">🕌 Aqidah</option>
+                        <option value="Akhlaq">✨ Akhlaq</option>
+                        <option value="Quran">📖 Al-Qur'an</option>
+                        <option value="Fiqih">⚖️ Fiqih</option>
+                        <option value="Tarikh">🏛️ Tarikh</option>
+                    </select>
                 </div>
-                <div style="font-size:3rem;">VS</div>
-                <div>
-                    <div style="color:var(--blood);">PENANTANG I</div>
-                    <div id="c-brief" style="font-size:3.5rem; font-family:'Cinzel';"></div>
+
+                <div class="select-box">
+                    <select id="kelas-select" class="game-select">
+                        <option value="">🎓 Pilih Kelas</option>
+                        <option value="1">Kelas 1</option>
+                        <option value="2">Kelas 2</option>
+                        <option value="3">Kelas 3</option>
+                        <option value="4">Kelas 4</option>
+                        <option value="5">Kelas 5</option>
+                        <option value="6">Kelas 6</option>
+                    </select>
+                </div>
+
+                <div class="select-box">
+                    <select id="semester-select" class="game-select">
+                        <option value="">📅 Pilih Semester</option>
+                        <option value="1">Semester 1</option>
+                        <option value="2">Semester 2</option>
+                    </select>
+                </div>
+                <div class="select-box">
+                    <select id="ronde-select" class="game-select">
+                        <option value="3" selected>🔁 3 Ronde (Normal)</option>
+                        <option value="5">🔁 5 Ronde (Panjang)</option>
+                        <option value="7">🔁 7 Ronde (Sangat Panjang)</option>
+                    </select>
+                </div>
+                <button id="btn-lanjut" class="btn-action" onclick="pilihFilter()" disabled>⏳ MEMUAT SOAL...</button>
+            </div>
+        </main>
+
+        <main id="screen-input" class="screen hidden">
+            <h1 class="brand-title">COLOSSEUM</h1>
+            <div class="stone-panel">
+                <textarea id="player-input" placeholder="Masukkan Nama Gladiator (pisahkan dengan koma atau enter)..."></textarea>
+                <button onclick="Game.startSelection()" class="btn-action">ACAK TAKDIR RAJA ⚔️</button>
+            </div>
+        </main>
+
+        <main id="screen-selection" class="screen hidden">
+            <h2 class="brand-title" style="font-size: 3rem;">MEMILIH RAJA...</h2>
+            <div class="roulette-box" style="height:150px; overflow:hidden; border-top:5px solid var(--gold); border-bottom:5px solid var(--gold); width:600px; position:relative;">
+                <div id="roulette-strip" style="position:absolute; width:100%; top:0; transition: top 4s cubic-bezier(0.1, 0, 0.1, 1);"></div>
+            </div>
+        </main>
+
+        <main id="screen-briefing" class="screen hidden">
+            <div class="stone-panel" style="text-align:center;">
+                <h2 class="brand-title" style="font-size: 2.5rem;">URUTAN PERANG</h2>
+                <div style="display:flex; justify-content:space-around; align-items:center; margin:30px 0;">
+                    <div>
+                        <div style="color:var(--gold);">RAJA</div>
+                        <div id="k-brief" style="font-size:3.5rem; font-family:'Cinzel';"></div>
+                    </div>
+                    <div style="font-size:3rem;">VS</div>
+                    <div>
+                        <div style="color:var(--blood);">PENANTANG I</div>
+                        <div id="c-brief" style="font-size:3.5rem; font-family:'Cinzel';"></div>
+                    </div>
+                </div>
+                <div id="queue-container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:10px; margin-bottom: 20px;"></div>
+                <button onclick="masukArenaCek()" class="btn-action">MASUK ARENA 🏛️</button>
+            </div>
+        </main>
+
+        <main id="screen-battle" class="screen hidden">
+            <button id="btn-pause" class="btn-pause" onclick="Game.togglePause()">⏸ JEDA</button>
+            <div id="pause-overlay" class="hidden">
+                <div class="alert-box">
+                    <h1 style="font-family:'Cinzel'; font-size:2.5rem; color:var(--gold);">⏸ DIJEDA</h1>
+                    <p style="font-size:1.4rem; margin:20px 0;">Pertandingan dihentikan sementara oleh guru...</p>
                 </div>
             </div>
-            <div id="queue-container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:10px; margin-bottom: 20px;"></div>
-            <button onclick="masukArenaCek()" class="btn-action">MASUK ARENA 🏛️</button>
-        </div>
-    </main>
+            <div id="progress-wrap">
+                <div id="progress-text">Duel 1 / 1</div>
+                <div id="progress-bar-outer"><div id="progress-bar-inner"></div></div>
+            </div>
+            <div class="arena-grid">
+                <div class="warrior-card" style="border-color: var(--gold);">
+                    <div class="brand-title" id="king-name" style="font-size:2rem; letter-spacing: 2px;"></div>
+                    <div id="king-score" style="font-size:4rem; font-family:'Cinzel'; color:var(--gold);">0</div>
+                    <div class="pad-grid">
+                        <button class="pad-btn" onclick="Game.submit('king', 'A', this)">A</button>
+                        <button class="pad-btn" onclick="Game.submit('king', 'B', this)">B</button>
+                        <button class="pad-btn" onclick="Game.submit('king', 'C', this)">C</button>
+                        <button class="pad-btn" onclick="Game.submit('king', 'D', this)">D</button>
+                    </div>
+                </div>
 
-    <main id="screen-battle" class="screen hidden">
-        <button id="btn-pause" class="btn-pause" onclick="Game.togglePause()">⏸ JEDA</button>
-        <div id="pause-overlay" class="hidden">
+                <div class="q-card">
+                    <div id="round-info" style="font-weight:bold; color:#8e44ad; font-size: 1.2rem;">PUTARAN 1</div>
+                    <div id="timer-bar-outer"><div id="timer-bar-inner"></div></div>
+                    <div id="q-text">Memuat Soal...</div>
+                    <div id="opt-text"></div>
+                </div>
+
+                <div class="warrior-card" style="border-color: var(--blood);">
+                    <div class="brand-title" id="chal-name" style="font-size:2rem; letter-spacing: 2px;"></div>
+                    <div id="chal-score" style="font-size:4rem; font-family:'Cinzel'; color:var(--blood);">0</div>
+                    <div class="pad-grid">
+                        <button class="pad-btn" onclick="Game.submit('chal', 'A', this)">A</button>
+                        <button class="pad-btn" onclick="Game.submit('chal', 'B', this)">B</button>
+                        <button class="pad-btn" onclick="Game.submit('chal', 'C', this)">C</button>
+                        <button class="pad-btn" onclick="Game.submit('chal', 'D', this)">D</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="next-up-wrap">
+                <div id="next-up-title">ANTREAN BERIKUTNYA</div>
+                <div id="next-up-list"></div>
+            </div>
+        </main>
+
+        <div id="exit-overlay">
             <div class="alert-box">
-                <h1 style="font-family:'Cinzel'; font-size:2.5rem; color:var(--gold);">⏸ DIJEDA</h1>
-                <p style="font-size:1.4rem; margin:20px 0;">Pertandingan dihentikan sementara oleh guru...</p>
-            </div>
-        </div>
-        <div id="progress-wrap">
-            <div id="progress-text">Duel 1 / 1</div>
-            <div id="progress-bar-outer"><div id="progress-bar-inner"></div></div>
-        </div>
-        <div class="arena-grid">
-            <div class="warrior-card" style="border-color: var(--gold);">
-                <div class="brand-title" id="king-name" style="font-size:2rem; letter-spacing: 2px;"></div>
-                <div id="king-score" style="font-size:4rem; font-family:'Cinzel'; color:var(--gold);">0</div>
-                <div class="pad-grid">
-                    <button class="pad-btn" onclick="Game.submit('king', 'A', this)">A</button>
-                    <button class="pad-btn" onclick="Game.submit('king', 'B', this)">B</button>
-                    <button class="pad-btn" onclick="Game.submit('king', 'C', this)">C</button>
-                    <button class="pad-btn" onclick="Game.submit('king', 'D', this)">D</button>
-                </div>
-            </div>
-
-            <div class="q-card">
-                <div id="round-info" style="font-weight:bold; color:#8e44ad; font-size: 1.2rem;">PUTARAN 1</div>
-                <div id="timer-bar-outer"><div id="timer-bar-inner"></div></div>
-                <div id="q-text">Memuat Soal...</div>
-                <div id="opt-text"></div>
-            </div>
-
-            <div class="warrior-card" style="border-color: var(--blood);">
-                <div class="brand-title" id="chal-name" style="font-size:2rem; letter-spacing: 2px;"></div>
-                <div id="chal-score" style="font-size:4rem; font-family:'Cinzel'; color:var(--blood);">0</div>
-                <div class="pad-grid">
-                    <button class="pad-btn" onclick="Game.submit('chal', 'A', this)">A</button>
-                    <button class="pad-btn" onclick="Game.submit('chal', 'B', this)">B</button>
-                    <button class="pad-btn" onclick="Game.submit('chal', 'C', this)">C</button>
-                    <button class="pad-btn" onclick="Game.submit('chal', 'D', this)">D</button>
+                <h1 id="exit-title" style="font-family:'Cinzel'; font-size:2.2rem; color:var(--gold);">⚠️ KELUAR DARI ARENA?</h1>
+                <p id="exit-msg" style="font-size:1.25rem; margin:20px 0;">Pertandingan yang sedang berjalan akan dihentikan dan skor akan diulang dari awal.</p>
+                <div class="exit-actions">
+                    <button class="btn-action" onclick="Nav.stay()">LANJUT BERTANDING</button>
+                    <button class="btn-action btn-ghost" onclick="Nav.leave()">YA, KELUAR</button>
                 </div>
             </div>
         </div>
 
-        <div id="next-up-wrap">
-            <div id="next-up-title">ANTREAN BERIKUTNYA</div>
-            <div id="next-up-list"></div>
-        </div>
-    </main>
+        <div id="result-overlay" class="hidden"></div>
 
-    <div id="exit-overlay">
-        <div class="alert-box">
-            <h1 id="exit-title" style="font-family:'Cinzel'; font-size:2.2rem; color:var(--gold);">⚠️ KELUAR DARI ARENA?</h1>
-            <p id="exit-msg" style="font-size:1.25rem; margin:20px 0;">Pertandingan yang sedang berjalan akan dihentikan dan skor akan diulang dari awal.</p>
-            <div class="exit-actions">
-                <button class="btn-action" onclick="Nav.stay()">LANJUT BERTANDING</button>
-                <button class="btn-action btn-ghost" onclick="Nav.leave()">YA, KELUAR</button>
+        <div id="alert-overlay">
+            <div class="alert-box">
+                <h1 id="alert-title" style="font-family:'Cinzel'; font-size:2.5rem; color:var(--gold);"></h1>
+                <p id="alert-message" style="font-size:1.4rem; margin:20px 0;"></p>
+                <button class="btn-action" onclick="closeAlert()">KEMBALI</button>
             </div>
         </div>
-    </div>
 
-    <div id="result-overlay" class="hidden"></div>
-
-    <div id="alert-overlay">
-        <div class="alert-box">
-            <h1 id="alert-title" style="font-family:'Cinzel'; font-size:2.5rem; color:var(--gold);"></h1>
-            <p id="alert-message" style="font-size:1.4rem; margin:20px 0;"></p>
-            <button class="btn-action" onclick="closeAlert()">KEMBALI</button>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
-</body>
-</html>
+        <script src="script.js"></script>
+    </body>
+    </html>
